@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compare-all-the-names"
+license = {file = "LICENSE"}
+version = "0.1.0"
+description = "An efficient Python package for all-to-all comparisons of large datasets of names"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Johnny Weymouth"}
+]
+dependencies = [
+    "rich>=10.0.0",
+    "Unidecode>=1.2.0",
+    "fuzzywuzzy>=0.18.0",
+    "python-Levenshtein>=0.25.1",
+    "HungarianScorer==1.0.2",
+    "RapidFuzz>=3.0.0"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Go",
+]
+
+[project.urls]
+Homepage = "https://github.com/JohnnyWeymouth/compare-all-the-names"
+Repository = "https://github.com/JohnnyWeymouth/compare-all-the-names"
+Issues = "https://github.com/JohnnyWeymouth/compare-all-the-names/issues"

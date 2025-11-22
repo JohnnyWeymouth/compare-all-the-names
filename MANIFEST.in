@@ -1,0 +1,7 @@
+include README.md
+include LICENSE
+include pyproject.toml
+include go.mod
+include main.go
+graft compare-all-the-names
+global-exclude *.py[cod]

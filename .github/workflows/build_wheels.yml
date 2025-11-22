@@ -1,0 +1,153 @@
+name: Build and Package
+
+on:
+  release:
+    types: [ created ]
+
+jobs:
+  build-go-binaries:
+    name: Build Go Binary for ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+            runner: ubuntu-latest
+            binary: compare-all-the-names
+          - os: linux
+            arch: arm64
+            runner: ubuntu-latest
+            binary: compare-all-the-names
+          - os: darwin
+            arch: amd64
+            runner: macos-latest
+            binary: compare-all-the-names
+          - os: darwin
+            arch: arm64
+            runner: macos-latest
+            binary: compare-all-the-names
+          - os: windows
+            arch: amd64
+            runner: windows-latest
+            binary: compare-all-the-names.exe
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.25'
+    
+    - name: Build Go Binary
+      env:
+        GOOS: ${{ matrix.os }}
+        GOARCH: ${{ matrix.arch }}
+        CGO_ENABLED: 0
+      run: |
+        go build -o ${{ matrix.binary }} -ldflags="-s -w" main.go
+    
+    - name: Upload Binary Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: binary-${{ matrix.os }}-${{ matrix.arch }}
+        path: ${{ matrix.binary }}
+        retention-days: 7
+
+  build-wheels:
+    name: Build Wheel for ${{ matrix.platform }}
+    needs: build-go-binaries
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - platform: manylinux_2_17_x86_64
+            runner: ubuntu-latest
+            os: linux
+            arch: amd64
+            binary: compare-all-the-names
+          - platform: manylinux_2_17_aarch64
+            runner: ubuntu-latest
+            os: linux
+            arch: arm64
+            binary: compare-all-the-names
+          - platform: macosx_10_9_x86_64
+            runner: macos-latest
+            os: darwin
+            arch: amd64
+            binary: compare-all-the-names
+          - platform: macosx_11_0_arm64
+            runner: macos-latest
+            os: darwin
+            arch: arm64
+            binary: compare-all-the-names
+          - platform: win_amd64
+            runner: windows-latest
+            os: windows
+            arch: amd64
+            binary: compare-all-the-names.exe
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Download Go Binary
+      uses: actions/download-artifact@v4
+      with:
+        name: binary-${{ matrix.os }}-${{ matrix.arch }}
+        path: binaries/
+    
+    - name: List downloaded binaries (Debug)
+      shell: bash
+      run: |
+        ls -R binaries/
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel setuptools
+    
+    - name: Build platform-specific wheel
+      shell: bash
+      run: |
+        python setup.py bdist_wheel --plat-name ${{ matrix.platform }}
+    
+    - name: Upload Wheel
+      uses: actions/upload-artifact@v4
+      with:
+        name: wheel-${{ matrix.platform }}
+        path: dist/*.whl
+        retention-days: 7
+
+  publish:
+    name: Publish to PyPI
+    needs: build-wheels
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    environment:
+      name: pypi
+      url: https://pypi.org/p/compare-all-the-names
+    permissions:
+      id-token: write
+    
+    steps:
+    - name: Download all wheels
+      uses: actions/download-artifact@v4
+      with:
+        pattern: wheel-*
+        path: dist/
+        merge-multiple: true
+    
+    - name: List wheels to upload
+      run: ls -lh dist/
+
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        username: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
