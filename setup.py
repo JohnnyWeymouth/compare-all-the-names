@@ -36,7 +36,7 @@ setup(
     include_package_data=True,
     # Dynamically target the bin folder for whatever package was found
     package_data={
-        "": ["bin/*"],
+        "compare_all_the_names": ["bin/*"],
     },
     cmdclass={
         'build_py': BuildWithBinaries,
